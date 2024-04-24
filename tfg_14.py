@@ -7,6 +7,8 @@ from numpy import conjugate as co
 from scipy.linalg import expm
 from scipy import optimize
 from tqdm import tqdm 
+import scienceplots
+plt.style.use('science')
 # units in 2pi * GHz, so timescale is 1ns
 G_R = 0 * 2*np.pi
 G_L = 0 * 2*np.pi
@@ -49,7 +51,7 @@ V4 = np.array([
     [0, 0, 0, 0, 0, ep4]], dtype=np.complex128)
 
 
-f4s = np.linspace(1.48, 1.53, 500)
+f4s = np.linspace(1, 3, 500)
 pmaxs = np.zeros_like(f4s)
 frabis = np.zeros_like(f4s)
 
@@ -68,7 +70,7 @@ H = [H0,  [V4, V4_coeff]]
 def sine(t, A, f, phi):
     return A * np.sin(2*np.pi*f*t + phi)
 
-if True:
+if False:
     for i, f4 in tqdm(enumerate(f4s)):
         w4 = f4 * 2*np.pi
         args = {'w4': w4}
@@ -94,35 +96,53 @@ if True:
         
         probs = 1 - result.expect[0]
         pmaxs[i] = np.max(probs)
-        """ # calculate oscillation frequency
+        # calculate oscillation frequency
         spectrum = np.fft.fft(probs - np.mean(probs))
         freqs = abs(np.fft.fftfreq(len(spectrum), tlist[1]-tlist[0]))
-        dom_freq = freqs[np.argmax(spectrum)]
+        # normalize spectrum
+        spectrum = spectrum / np.max(spectrum)
+        # get minimum frequencies with magnitude > 0.8
+        dom_freq = np.min(freqs[abs(spectrum) > 0.99])
         frabis[i] = dom_freq
-        """
         # fit sine
-        popt, _ = optimize.curve_fit(sine, tlist, probs - np.mean(probs), p0=[0.5, 0.01, 0])
-        frabis[i] = popt[1]
+        """ popt, _ = optimize.curve_fit(sine, tlist, probs - np.mean(probs), p0=[0.5, 0.01, 0])
+        frabis[i] = popt[1] """
 # load data
-""" pmaxs = np.load('tfg_14_pmaxs2.npy')
-frabis = np.load('tfg_14_frabis2.npy') """
+pmaxs = np.load('tfg_14_pmaxs3.npy')
+frabis = np.load('tfg_14_frabis3.npy')
 # save data
-np.save('tfg_14_pmaxs3', pmaxs)
+""" np.save('tfg_14_pmaxs3', pmaxs)
 np.save('tfg_14_frabis3', frabis)
+     """
+     
+def plt_settings(xlabel, ylabel, title=None, xlim=(None, None), ylim=(None, None)):
+    plt.figure(figsize=(10, 6))
+    plt.xlabel(xlabel, fontsize=25)
+    plt.ylabel(ylabel, fontsize=25)
+    plt.ylim(ylim)
+    plt.xlim(xlim)
+    plt.tick_params(axis='both', which='major', labelsize=20, width=1.2, length=6)
+    plt.tick_params(axis='both', which='minor', labelsize=20, width=1.2, length=2)
+    if title is not None:
+        plt.title(title)
     
-plt.figure()
-plt.title('Max Probability')
-plt.plot(f4s, pmaxs)
-plt.xlabel('Frequency (GHz)')
-""" plt.savefig('tfg_14_pmaxs3.png') """
-
-plt.figure()
-plt.title('Rabi Frequency')
-plt.plot(f4s, frabis*1000)
-plt.xlabel('Frequency (GHz)')
-plt.ylabel('Rabi Frequency (MHz)')
-plt.ylim(0, 50)
-""" plt.savefig('tfg_14_frabis3.png') """
+    
+with plt.style.context('science'):
+    plt_settings('Frequency (GHz)', r"$max(1-P_{\downarrow\downarrow})$", title=None, xlim=(1, 3), ylim=(0, 1.05))
+    plt.plot(f4s, pmaxs, linewidth=1.5)
+    plt.savefig('Probs_w4.png')
+    
+    
+    """ plt.figure()
+    plt.title('Rabi Frequency')
+    plt.plot(f4s, frabis*1000)
+    plt.xlabel('Frequency (GHz)')
+    plt.ylabel('Rabi Frequency (MHz)')
+    plt.ylim(0, 50)
+    plt.savefig('tfg_14_frabis3.png') """
+    plt_settings('Frequency (GHz)', 'Rabi Frequency (MHz)', title=None, xlim=(1, 3), ylim=(0, 50))
+    plt.plot(f4s, frabis*1000, linewidth=1.5)
+    
 
 
 

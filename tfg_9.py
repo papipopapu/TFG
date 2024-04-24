@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import qutip as qt
 import numba as nb
 from numpy import conjugate as co
+from scipy import optimize
 from scipy.linalg import expm
 # units in 2pi * GHz, so timescale is 1ns
 G_R = 0 * 2*np.pi
@@ -33,8 +34,8 @@ print(frabi)
 
 
 
-w2 = 1.2 * 2 * np.pi  # doesnt matter for now
-w4 = 1.49583166333 * 2 * np.pi  
+w2 = 2.425 * 2 * np.pi  # doesnt matter for now
+w4 = 1.526 * 2 * np.pi  
 # paper calculations
 h = 6.62607015e-34
 B = 0.675
@@ -126,6 +127,23 @@ plt.show() """
 T = 2*np.pi / w4
 result = qt.fsesolve(H, psi0, tlist,  Pground, T, args=args)
 probs = result.expect[0]
+spectrum = np.fft.fft(probs - np.mean(probs))
+freqs = abs(np.fft.fftfreq(len(spectrum), tlist[1]-tlist[0]))
+plt.figure()
+plt.title('spectral density')
+plt.plot(freqs, abs(spectrum))
+plt.show()
+
+# get freqs less than 1 GHz
+new_spectrum = spectrum[freqs < 1]
+new_freqs = freqs[freqs < 1]
+
+
+dom_freq = new_freqs[np.argmax(new_spectrum)]
+print("Dominant frequency", dom_freq)
+    
+    
+    
 plt.figure()
 plt.title('Floquet')
 plt.plot(tlist, 1-probs)

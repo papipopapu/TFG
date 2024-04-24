@@ -6,6 +6,7 @@ import numba as nb
 from numpy import conjugate as co
 from scipy.linalg import expm
 from tqdm import tqdm 
+from scipy import optimize
 # units in 2pi * GHz, so timescale is 1ns
 G_R = 0 * 2*np.pi
 G_L = 0 * 2*np.pi
@@ -48,14 +49,14 @@ V4 = np.array([
     [0, 0, 0, 0, 0, ep4]], dtype=np.complex128)
 
 
-f2s = np.linspace(1, 3, 500)
+f2s = np.linspace(2.4, 2.440, 250)
 pmaxs = np.zeros_like(f2s)
 frabis = np.zeros_like(f2s)
 
 
 psi0 = np.array([0, 0, 0, 1, 0, 0], dtype=np.complex128)
 
-N0 = 250
+N0 = 500
 tlist = np.linspace(0, 100, N0)
 psi0 = qt.Qobj(psi0)
 Pground = psi0 * psi0.dag()
@@ -64,16 +65,19 @@ V2 = qt.Qobj(V2)
 V2_coeff = 'cos(w2*t)'
 H = [H0,  [V2, V2_coeff]]
 
-
+@nb.jit
+def sine(t, A, f, phi):
+    return A * np.sin(2*np.pi*f*t + phi)
 for i, f2 in tqdm(enumerate(f2s)):
     w2 = f2 * 2*np.pi
     args = {'w2': w2}
     T = 2*np.pi / w2
     result = None
     N = N0 
+    error = False
     while result is None:
         try:
-            tlist = np.linspace(0, 100, N)
+            tlist = np.linspace(0, 500, N)
             result = qt.fsesolve(H, psi0, tlist,  Pground, T, args=args)
         except Exception as e:
             if str(e) == 'Interrupted by user':
@@ -82,15 +86,24 @@ for i, f2 in tqdm(enumerate(f2s)):
             print('Increasing N to', N)
             if N > 10000:
                 print('Failed to converge')
-                break
-            
+                error = True
+                break 
+    if error:
+        continue
+
     probs = 1 - result.expect[0]
     pmaxs[i] = np.max(probs)
     # calculate oscillation frequency
-    spectrum = np.fft.fft(probs - np.mean(probs))
+    spectrum = abs(np.fft.fft(probs - np.mean(probs)))
     freqs = abs(np.fft.fftfreq(len(spectrum), tlist[1]-tlist[0]))
-    dom_freq = freqs[np.argmax(spectrum)]
-    frabis[i] = dom_freq
+    # normalize spectrum
+    spectrum = spectrum / np.max(spectrum)
+    # get minimum frequencies with magnitude > 0.8
+    dom_freq = np.min(freqs[abs(spectrum) > 0.99])
+    frabis[i] = dom_freq 
+    # fit sine
+    """ popt, _ = optimize.curve_fit(sine, tlist, probs - np.mean(probs), p0=[0.5, 0.01, 0])
+    frabis[i] = popt[1] """
     
 # save data
 np.save('tfg_13_pmaxs2', pmaxs)
