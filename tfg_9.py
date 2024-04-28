@@ -17,8 +17,8 @@ w_z = 2.00 * 2*np.pi
 dw_z = 0.439 * 2*np.pi 
 dG_L2 = 0 * 2*np.pi
 dG_R2 = 0 * 2*np.pi
-dG_L4 = 0 * 2*np.pi
-dG_R4 = 0 * 2*np.pi
+dG_L4 = 0.01 * 2*np.pi
+dG_R4 = 0.01 * 2*np.pi
 ep2 = 0#40.2 * 2*np.pi
 ep4 = 6.35 * 2*np.pi # * 15 
 vareps = (U**2-e**2)/(2*U) 
@@ -34,8 +34,8 @@ print(frabi)
 
 
 
-w2 = 2.425 * 2 * np.pi  # doesnt matter for now
-w4 = 1.526 * 2 * np.pi  
+w2 = 2.01 * 2 * np.pi  # doesnt matter for now
+w4 = 1.49 * 2 * np.pi  
 # paper calculations
 h = 6.62607015e-34
 B = 0.675
@@ -64,9 +64,21 @@ H0 = np.array([
     [-t   , co(t), -co(Om), -Om    , 0        , U+e]], dtype=np.complex128)
 
 evals, evecs = np.linalg.eigh(H0)
-print(evals)
-print(evecs.T)
-
+ground = 0
+print("Ground:", ground)
+print("Eigenvec:", evecs[:, ground])
+print("Frequencies:")
+e0 = evals[ground]
+for e in evals:
+    print((e-e0)/(2*np.pi))
+print("----")
+ground = 2
+print("Ground:", ground)
+print("Eigenvec:", evecs[:, ground])
+print("Frequencies:")
+e1 = evals[ground]
+for e in evals:
+    print((e-e1)/(2*np.pi))
     
 
 V2 = np.array([
@@ -127,7 +139,7 @@ plt.show() """
 T = 2*np.pi / w4
 result = qt.fsesolve(H, psi0, tlist,  Pground, T, args=args)
 probs = result.expect[0]
-spectrum = np.fft.fft(probs - np.mean(probs))
+""" spectrum = np.fft.fft(probs - np.mean(probs))
 freqs = abs(np.fft.fftfreq(len(spectrum), tlist[1]-tlist[0]))
 plt.figure()
 plt.title('spectral density')
@@ -141,7 +153,7 @@ new_freqs = freqs[freqs < 1]
 
 dom_freq = new_freqs[np.argmax(new_spectrum)]
 print("Dominant frequency", dom_freq)
-    
+     """
     
     
 plt.figure()

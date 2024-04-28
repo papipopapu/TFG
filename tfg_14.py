@@ -22,6 +22,8 @@ dG_L2 = 0 * 2*np.pi
 dG_R2 = 0 * 2*np.pi
 dG_L4 = 0 * 2*np.pi
 dG_R4 = 0 * 2*np.pi
+dw_z4 = 0.2 * 2*np.pi
+w_z4 = 0.4 * 2*np.pi
 ep2 = 0
 ep4 = 6.35 * 2*np.pi
 
@@ -43,24 +45,27 @@ V2 = np.array([
     [0, 0, 0, 0, -ep2, 0],
     [0, 0, 0, 0, 0, ep2]], dtype=np.complex128)
 V4 = np.array([
-    [0, 0, co(dG_R4), dG_L4, 0, 0],
-    [0, 0, co(dG_L4), dG_R4, 0, 0],
-    [dG_R4, dG_L4, 0, 0, 0, 0],
-    [co(dG_L4), co(dG_R4), 0, 0, 0, 0],
+    [-dw_z4, 0, co(dG_R4), dG_L4, 0, 0],
+    [0, dw_z4, co(dG_L4), dG_R4, 0, 0],
+    [dG_R4, dG_L4, w_z4, 0, 0, 0],
+    [co(dG_L4), co(dG_R4), 0, -w_z4, 0, 0],
     [0, 0, 0, 0, -ep4, 0],
     [0, 0, 0, 0, 0, ep4]], dtype=np.complex128)
 
 
-f4s = np.linspace(1, 3, 500)
-pmaxs = np.zeros_like(f4s)
-frabis = np.zeros_like(f4s)
+fmin = 1.5081
+fmax = 1.5155
+
 
 
 psi0 = np.array([0, 0, 0, 1, 0, 0], dtype=np.complex128)
+psi0_ = np.array([0, 1, 0, 0, 0, 0], dtype=np.complex128)
 
 N0 = 250
 psi0 = qt.Qobj(psi0)
+psi0_ = qt.Qobj(psi0_)
 Pground = psi0 * psi0.dag()
+Pground_ = psi0_ * psi0_.dag()
 H0 = qt.Qobj(H0)
 V4 = qt.Qobj(V4)
 V4_coeff = 'cos(w4*t)'
@@ -70,7 +75,9 @@ H = [H0,  [V4, V4_coeff]]
 def sine(t, A, f, phi):
     return A * np.sin(2*np.pi*f*t + phi)
 
-if False:
+def main(psi0, N0, f4s, H, Pground):
+    pmaxs = np.zeros_like(f4s)
+    frabis = np.zeros_like(f4s)
     for i, f4 in tqdm(enumerate(f4s)):
         w4 = f4 * 2*np.pi
         args = {'w4': w4}
@@ -99,50 +106,75 @@ if False:
         # calculate oscillation frequency
         spectrum = np.fft.fft(probs - np.mean(probs))
         freqs = abs(np.fft.fftfreq(len(spectrum), tlist[1]-tlist[0]))
-        # normalize spectrum
-        spectrum = spectrum / np.max(spectrum)
-        # get minimum frequencies with magnitude > 0.8
-        dom_freq = np.min(freqs[abs(spectrum) > 0.99])
-        frabis[i] = dom_freq
-        # fit sine
-        """ popt, _ = optimize.curve_fit(sine, tlist, probs - np.mean(probs), p0=[0.5, 0.01, 0])
-        frabis[i] = popt[1] """
-# load data
-pmaxs = np.load('tfg_14_pmaxs3.npy')
-frabis = np.load('tfg_14_frabis3.npy')
-# save data
-""" np.save('tfg_14_pmaxs3', pmaxs)
-np.save('tfg_14_frabis3', frabis)
-     """
-     
-def plt_settings(xlabel, ylabel, title=None, xlim=(None, None), ylim=(None, None)):
+        spectrum = spectrum[freqs < 0.1]
+        freqs = freqs[freqs < 0.1]
+        dom_freq = freqs[np.argmax(abs(spectrum))]
+        A0 = np.max(probs- np.mean(probs))
+        popt, _ = optimize.curve_fit(sine, tlist, probs - np.mean(probs), p0=[A0, dom_freq, 0])
+        frabis[i] = popt[1]
+        
+    return pmaxs, frabis
+fmin = 1
+fmax = 3
+fmin = 1.50790
+fmax = 1.515006
+f4s = np.linspace(fmin, fmax, 250)
+pmaxs1, frabis1 = main(psi0, N0, f4s, H, Pground)
+fmin_ = 1
+fmax_ = 3
+fmin_ = 1.59977
+fmax_ = 1.60429
+f4s_ = np.linspace(fmin_, fmax_, 250)
+pmaxs2, frabis2 = main(psi0_, N0, f4s_, H, Pground_)
+
+# 
+""" pmaxs = np.load('tfg_14_pmaxs3.npy')
+frabis = np.load('tfg_14_frabis3.npy') """
+
+def plt_settings(xlabel, ylabel, title=None, xlim=None, ylim=None):
     plt.figure(figsize=(10, 6))
     plt.xlabel(xlabel, fontsize=25)
     plt.ylabel(ylabel, fontsize=25)
-    plt.ylim(ylim)
-    plt.xlim(xlim)
+    
+    if ylim is not None:
+        plt.ylim(ylim)
+    if xlim is not None:
+        plt.xlim(xlim)
     plt.tick_params(axis='both', which='major', labelsize=20, width=1.2, length=6)
     plt.tick_params(axis='both', which='minor', labelsize=20, width=1.2, length=2)
     if title is not None:
         plt.title(title)
     
     
+""" with plt.style.context('science'):
+    plt_settings('Frequency (GHz)', r"$max(1-P_0)$", title=None, xlim=(fmin, fmax), ylim=(0, 1.05))
+    plt.plot(f4s, pmaxs1, linewidth=1.5, label=r"$Q1$")
+    plt.plot(f4s, pmaxs2, linewidth=1.5, label=r"$Q1\_$")
+    plt.legend(fontsize=25)
+    #plt.savefig('Probs_w4.png')
+    
+    plt_settings('Frequency (GHz)', 'Rabi Frequency (MHz)', title=None, xlim=(fmin, fmax))
+    plt.plot(f4s, frabis1*1000, linewidth=1.5, label=r"$Q1$")
+    plt.plot(f4s, frabis2*1000, linewidth=1.5, label=r"$Q1\_$")
+    plt.legend(fontsize=25)
+    
+    #plt.savefig('Rabis_w4_Q1.png')
+
+ """
 with plt.style.context('science'):
-    plt_settings('Frequency (GHz)', r"$max(1-P_{\downarrow\downarrow})$", title=None, xlim=(1, 3), ylim=(0, 1.05))
-    plt.plot(f4s, pmaxs, linewidth=1.5)
-    plt.savefig('Probs_w4.png')
+    plt_settings('Frequency (GHz)', r"$max(1-P_{\downarrow\downarrow})$", title=None, xlim=(fmin, fmax), ylim=(0, 1.05))
+    plt.plot(f4s, pmaxs1, linewidth=1.5)
+    plt_settings('Frequency (GHz)', r"$max(1-P_{\uparrow\downarrow})$", title=None, xlim=(fmin_, fmax_), ylim=(0, 1.05))
+    plt.plot(f4s_, pmaxs2, linewidth=1.5)
+    #plt.savefig('Probs_w4.png')
+    
+    plt_settings('Frequency (GHz)', 'Rabi Frequency (MHz)', title=None, xlim=(fmin, fmax))
+    plt.plot(f4s, frabis1*1000, linewidth=1.5)
+    plt_settings('Frequency (GHz)', 'Rabi Frequency (MHz)', title=None, xlim=(fmin_, fmax_))
+    plt.plot(f4s_, frabis2*1000, linewidth=1.5)
     
     
-    """ plt.figure()
-    plt.title('Rabi Frequency')
-    plt.plot(f4s, frabis*1000)
-    plt.xlabel('Frequency (GHz)')
-    plt.ylabel('Rabi Frequency (MHz)')
-    plt.ylim(0, 50)
-    plt.savefig('tfg_14_frabis3.png') """
-    plt_settings('Frequency (GHz)', 'Rabi Frequency (MHz)', title=None, xlim=(1, 3), ylim=(0, 50))
-    plt.plot(f4s, frabis*1000, linewidth=1.5)
-    
+    #plt.savefig('Rabis_w4_Q1.png')
 
 
 
