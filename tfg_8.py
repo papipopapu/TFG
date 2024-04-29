@@ -50,6 +50,20 @@ V4 = np.array([
     [dG_L4, dG_R4, 0, -w_z4, 0, 0],
     [0, 0, 0, 0, -ep4, 0],
     [0, 0, 0, 0, 0, ep4]])
+V4 = np.array([
+    [-dw_z4, 0, 0, 0, 0, 0],
+    [0, dw_z4, 0, 0, 0, 0],
+    [0, 0, w_z4, 0, 0, 0],
+    [0, 0, 0, -w_z4, 0, 0],
+    [0, 0, 0, 0, -ep4, 0],
+    [0, 0, 0, 0, 0, ep4]])
+V4 = np.array([
+    [0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, -ep4, 0],
+    [0, 0, 0, 0, 0, ep4]])
 V2 = np.array([
     [0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0],
@@ -58,6 +72,7 @@ V2 = np.array([
     [0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0]])
 priviliged = [4,5]
+priviliged = []
 def HFp_mmp(m, mp):
     # all except the diagonal
     # [alpha, n, nbar]
@@ -158,7 +173,7 @@ for gamma in range(6):
         if l != m and l != mp:
             lsB.append(l)
 Q1_P4 = SWF_3(m, mp, lsA, lsB, mppsA, mppsB)
-Q1_P4 = Q1_P4.subs({w4:-dw_z+w_z}) 
+""" Q1_P4 = Q1_P4.subs({w4:-dw_z+w_z})  """
  
 alpha = 3
 beta = 0
@@ -198,7 +213,7 @@ for gamma in range(6):
             lsB.append(l)
             
 Q1P4 = SWF_3(m, mp, lsA, lsB, mppsA, mppsB)
-Q1P4 = Q1P4.subs({w4:-dw_z+w_z})
+""" Q1P4 = Q1P4.subs({w4:-dw_z+w_z}) """
 
 """ print("Q1P4")
 n, d = sp.fraction(Q1P4) """
@@ -212,12 +227,16 @@ xw_z = 2.00 * 2*np.pi
 xdw_z = 0.439 * 2*np.pi 
 xdG_L2 = 0 * 2*np.pi
 xdG_R2 = 0 * 2*np.pi
-xdG_L4 = 1 * 2*np.pi
-xdG_R4 = 1 * 2*np.pi
+xdG_L4 = 0 * 2*np.pi
+xdG_R4 = 0 * 2*np.pi
 xw_z4 = 0.00 * 2*np.pi
 xdw_z4 = 0.00 * 2*np.pi
 xep2 = 0
 xep4 = 6.35 * 2*np.pi
+xw4 = 1.5123172 * 2*np.pi
+xw4_ = 1.6022897 * 2*np.pi
+xw2 = 0
+
 
 """ # go through each term in the numerator, substitute the values and print each term
 tot = 0
@@ -238,7 +257,7 @@ print("Total: ", np.abs(tot))
 
 init_printing()
  """
-# substitute the values
+""" # substitute the values
 Q1P4val = Q1P4.subs({U:xU, e:xe, dw_z:xdw_z, w_z:xw_z, Om:xOm, t:xt, G_L:xG_L, G_R:xG_R, dG_L4:xdG_L4, dG_R4:xdG_R4, ep4:xep4, ep2:xep2})
 Q1_P4val = Q1_P4.subs({U:xU, e:xe, dw_z:xdw_z, w_z:xw_z, Om:xOm, t:xt, G_L:xG_L, G_R:xG_R, dG_L4:xdG_L4, dG_R4:xdG_R4, ep4:xep4, ep2:xep2})
 
@@ -269,13 +288,150 @@ plt.colorbar()
 plt.xlabel(r'$\omega_{z4}$')
 plt.ylabel(r'$\delta\omega_{z4}$')
 plt.title(r'$|Q1P4| - |Q1\_P4|$')
-plt.show()
+plt.show() """
 
 
 """ print("Q1P4: ", abs(Q1P4val))
-print("Q1_P4: ", abs(Q1_P4val))
-with open('tfg_8.txt', 'w') as f:
+print("Q1_P4: ", abs(Q1_P4val)) """
+""" with open('tfg_8.txt', 'w') as f:
     f.write(latex(simplify(Q1P4)))
     f.write("\n")
-    f.write(latex(simplify(Q1_P4)))
- """
+    f.write(latex(simplify(Q1_P4))) """
+
+
+def SWF_2(m, mp, ls):
+    A = 0
+    for l in tqdm(ls):
+        num = HFp_mmp(m, l) * HFp_mmp(l, mp)
+        den1 = diff_E_mmp(m, l)
+        den2 = diff_E_mmp(mp, l)
+        A += num * (1 / den1 + 1 / den2)
+    A = 1/2 * A
+    return A
+
+alpha = 3
+beta = 0
+
+m = [alpha, 0, 0]
+mp = m
+lsn2n4 = [
+    [0, 0],
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+    [0, -1]
+]
+ls = []
+for gamma in range(6):
+    for n2, n4 in lsn2n4:
+        l = [gamma, n2, n4]
+        if l != m and l != mp:
+            ls.append(l)
+bQ1P4_0 = SWF_2(m, mp, ls)
+""" bQ1P4_0 = bQ1P4_0.subs({w4:-dw_z+w_z}) """
+
+m = [beta, 0, -1]
+mp = m
+lsn2n4 = [
+    [0, -1],
+    [1, -1],
+    [0, 0],
+    [-1, -1],
+    [0, -2]
+]
+ls = []
+for gamma in range(6):
+    for n2, n4 in lsn2n4:
+        l = [gamma, n2, n4]
+        if l != m and l != mp:
+            ls.append(l)
+bQ1P4_1 = SWF_2(m, mp, ls)
+""" bQ1P4_1 = bQ1P4_1.subs({w4:-dw_z+w_z}) """
+
+
+
+
+
+
+with open('tfg_8.txt', 'w') as f:
+    f.write(latex(simplify(bQ1P4_0)))
+    f.write("\n")
+    f.write(latex(simplify(bQ1P4_1)))
+    
+    
+alpha = 3
+beta = 0
+
+mp = [alpha, 0, 0]
+m = mp
+mppsA = [
+    m
+]
+lsAn2n4 = [
+    [0, 0],
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+    [0, -1]
+]
+lsA = []
+for gamma in range(6):
+    for n2, n4 in lsAn2n4:
+        l = [gamma, n2, n4]
+        if l != m and l != mp:
+            lsA.append(l)
+mppsB = [
+    mp
+]
+lsB = lsA
+bbQ1P4_0 = SWF_3(m, mp, lsA, lsB, mppsA, mppsB)
+bbQ1P4_0 = bbQ1P4_0.subs({w4:-dw_z+w_z})
+
+mp = [beta, 0, -1]
+m = mp
+mppsA = [
+    m
+]
+lsAn2n4 = [
+    [0, -1],
+    [1, -1],
+    [0, 0],
+    [-1, -1],
+    [0, -2]
+]
+lsA = []
+for gamma in range(6):
+    for n2, n4 in lsAn2n4:
+        l = [gamma, n2, n4]
+        if l != m and l != mp:
+            lsA.append(l)
+mppsB = [
+    mp
+]
+lsB = lsA
+bbQ1P4_1 = SWF_3(m, mp, lsA, lsB, mppsA, mppsB)
+bbQ1P4_1 = bbQ1P4_1.subs({w4:-dw_z+w_z})
+
+Q1_P4_val = Q1_P4.subs({U:xU, e:xe, dw_z:xdw_z, w_z:xw_z, Om:xOm, t:xt, G_L:xG_L, G_R:xG_R, dG_L4:xdG_L4, dG_R4:xdG_R4, ep4:xep4, ep2:xep2, w4:xw4_, w2:xw2}) / (2 * np.pi)
+Q1P4_val = Q1P4.subs({U:xU, e:xe, dw_z:xdw_z, w_z:xw_z, Om:xOm, t:xt, G_L:xG_L, G_R:xG_R, dG_L4:xdG_L4, dG_R4:xdG_R4, ep4:xep4, ep2:xep2, w4:xw4, w2:xw2}) / (2 * np.pi)
+bQ1P4_0_val = bQ1P4_0.subs({U:xU, e:xe, dw_z:xdw_z, w_z:xw_z, Om:xOm, t:xt, G_L:xG_L, G_R:xG_R, dG_L4:xdG_L4, dG_R4:xdG_R4, ep4:xep4, ep2:xep2}) / (2 * np.pi)
+bQ1P4_1_val = bQ1P4_1.subs({U:xU, e:xe, dw_z:xdw_z, w_z:xw_z, Om:xOm, t:xt, G_L:xG_L, G_R:xG_R, dG_L4:xdG_L4, dG_R4:xdG_R4, ep4:xep4, ep2:xep2}) / (2 * np.pi)
+bdiff = (bQ1P4_1_val-bQ1P4_0_val) / 2
+bbQ1P4_0_val = bbQ1P4_0.subs({U:xU, e:xe, dw_z:xdw_z, w_z:xw_z, Om:xOm, t:xt, G_L:xG_L, G_R:xG_R, dG_L4:xdG_L4, dG_R4:xdG_R4, ep4:xep4, ep2:xep2}) / (2 * np.pi)
+bbQ1P4_1_val = bbQ1P4_1.subs({U:xU, e:xe, dw_z:xdw_z, w_z:xw_z, Om:xOm, t:xt, G_L:xG_L, G_R:xG_R, dG_L4:xdG_L4, dG_R4:xdG_R4, ep4:xep4, ep2:xep2}) / (2 * np.pi)
+bbdiff = (bbQ1P4_0_val - bbQ1P4_1_val) / 2
+
+diff = ((bQ1P4_0_val + bbQ1P4_0_val) - (bQ1P4_1_val + bbQ1P4_1_val))/2
+
+
+print("Q1P4: ", 2 * abs(Q1P4_val))
+print("Q1_P4: ", 2 * abs(Q1_P4_val))    
+""" print("Q1P4: ", 2 * abs(Q1P4_val))
+print("bQ1P4_0: ", abs(bQ1P4_0_val))
+print("bQ1P4_1: ", abs(bQ1P4_1_val))
+print("bbQ1P4_0: ", abs(bbQ1P4_0_val))
+print("bbQ1P4_1: ", abs(bbQ1P4_1_val))
+print("2bdiff: ", 2*bdiff)
+
+print("Rabi_b: ", 2 * (bdiff**2 + Q1P4_val**2)**0.5)
+print("Rabi_bb: ", 2 * (diff**2 + Q1P4_val**2)**0.5) """

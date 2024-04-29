@@ -176,8 +176,12 @@ with plt.style.context('science'):
     
     #plt.savefig('Rabis_w4_Q1.png')
 
-
-
+# ¿ Qué hemos visto?
+# Las frecuencias de rabi de Q1P4 y Q1_P4 son ligeramente distintas con los datos del
+# paper, pero no tan diferentes como en el articulo. Es posible encontrar combinaciones
+# de deltagamma4L(R), omega4z y deltaomega4z para explicar esto. Podria verse
+# que valores de estos parametros concuerdan con la anchura de resonancia del paper,
+# y cosas asi.
 plt.show()
 
 

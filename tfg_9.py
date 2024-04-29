@@ -17,12 +17,13 @@ w_z = 2.00 * 2*np.pi
 dw_z = 0.439 * 2*np.pi 
 dG_L2 = 0 * 2*np.pi
 dG_R2 = 0 * 2*np.pi
-dG_L4 = 0.01 * 2*np.pi
-dG_R4 = 0.01 * 2*np.pi
+dG_L4 = 0.00 * 2*np.pi
+dG_R4 = 0.00 * 2*np.pi
 ep2 = 0#40.2 * 2*np.pi
 ep4 = 6.35 * 2*np.pi # * 15 
 vareps = (U**2-e**2)/(2*U) 
-fQ1 = (w_z - dw_z - t*co(t)/vareps + Om*co(Om)/vareps) / (2*np.pi)
+fQ1 = (w_z - dw_z - t*co(t)/vareps + Om*co(Om)/vareps) / (2*np.pi) # this is precisely
+# the bloch-siegert shift adjustment!!! but it isnt because it doesnt depend on ep4, its just it
 fQ1_ = (w_z - dw_z + t*co(t)/vareps - Om*co(Om)/vareps) / (2*np.pi)
 fQ2 = (w_z + dw_z - t*co(t)/vareps + Om*co(Om)/vareps) / (2*np.pi)
 frabi  = 4 * ep2 * e * U * Om * t / (U**2 - e**2)**2 / (2*np.pi)
@@ -32,10 +33,11 @@ wQ2 = np.sqrt(dQ2**2 + 4 * np.abs(oQ2)**2) / (2*np.pi) """
 print(fQ1, fQ1_, fQ2)
 print(frabi)
 
+xw4 = 1.5123172 * 2*np.pi
+xw4_ = 1.6022897 * 2*np.pi
 
-
-w2 = 2.01 * 2 * np.pi  # doesnt matter for now
-w4 = 1.49 * 2 * np.pi  
+w2 = 0#2.01 * 2 * np.pi  # doesnt matter for now
+w4 = 1.5123172 * 2 * np.pi  
 # paper calculations
 h = 6.62607015e-34
 B = 0.675
@@ -110,10 +112,14 @@ psi0 = psi0 / np.linalg.norm(psi0)
 """ psi0 = evecs[:, 0]
 w4 = evals[2] - evals[0] """
 psi0 = ground
+""" psi0 = e2 """
+psiex = e1
 
 tlist = np.linspace(0, 500, 5000)
 psi0 = qt.Qobj(psi0)
+psiex = qt.Qobj(psiex)
 Pground = psi0 * psi0.dag()
+Pex = psiex * psiex.dag()
 H0 = qt.Qobj(H0)
 V2 = qt.Qobj(V2)
 V4 = qt.Qobj(V4)
@@ -137,8 +143,9 @@ plt.show() """
 
 # now with floquet formalism in qutip
 T = 2*np.pi / w4
-result = qt.fsesolve(H, psi0, tlist,  Pground, T, args=args)
+result = qt.fsesolve(H, psi0, tlist,  [Pground, Pex], T, args=args)
 probs = result.expect[0]
+ex = result.expect[1]
 """ spectrum = np.fft.fft(probs - np.mean(probs))
 freqs = abs(np.fft.fftfreq(len(spectrum), tlist[1]-tlist[0]))
 plt.figure()
@@ -159,6 +166,11 @@ print("Dominant frequency", dom_freq)
 plt.figure()
 plt.title('Floquet')
 plt.plot(tlist, 1-probs)
+
+plt.figure()
+plt.title('Floquet')
+plt.plot(tlist, ex)
+
 plt.show()
 """ # only plot floquet modes
 H = [H0, [V4, V4_coeff]]
