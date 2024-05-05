@@ -22,8 +22,8 @@ dG_L2 = 0 * 2*np.pi
 dG_R2 = 0 * 2*np.pi
 dG_L4 = 0 * 2*np.pi
 dG_R4 = 0 * 2*np.pi
-dw_z4 = 0.2 * 2*np.pi
-w_z4 = 0.4 * 2*np.pi
+dw_z4 = 0
+w_z4 = 0
 ep2 = 0
 ep4 = 6.35 * 2*np.pi
 
@@ -118,21 +118,30 @@ fmin = 1
 fmax = 3
 fmin = 1.50790
 fmax = 1.515006
-f4s = np.linspace(fmin, fmax, 250)
-pmaxs1, frabis1 = main(psi0, N0, f4s, H, Pground)
+f4s = np.linspace(fmin, fmax, 500)
+""" pmaxs1, frabis1 = main(psi0, N0, f4s, H, Pground) """
 fmin_ = 1
 fmax_ = 3
 fmin_ = 1.59977
 fmax_ = 1.60429
-f4s_ = np.linspace(fmin_, fmax_, 250)
-pmaxs2, frabis2 = main(psi0_, N0, f4s_, H, Pground_)
+f4s_ = np.linspace(fmin_, fmax_, 500)
+""" pmaxs2, frabis2 = main(psi0_, N0, f4s_, H, Pground_) """
 
 # 
-""" pmaxs = np.load('tfg_14_pmaxs3.npy')
-frabis = np.load('tfg_14_frabis3.npy') """
+""" np.save('pmaxs1.npy', pmaxs1)
+np.save('pmaxs2.npy', pmaxs2)
+np.save('frabis1.npy', frabis1)
+np.save('frabis2.npy', frabis2) """
+pmaxs1 = np.load('pmaxs1.npy')
+pmaxs2 = np.load('pmaxs2.npy')
+frabis1 = np.load('frabis1.npy')
+frabis2 = np.load('frabis2.npy')
+
+maxarg1 = np.argmax(pmaxs1)
+maxarg2 = np.argmax(pmaxs2)
 
 def plt_settings(xlabel, ylabel, title=None, xlim=None, ylim=None):
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(6, 5))
     plt.xlabel(xlabel, fontsize=25)
     plt.ylabel(ylabel, fontsize=25)
     
@@ -170,8 +179,13 @@ with plt.style.context('science'):
     
     plt_settings('Frequency (GHz)', 'Rabi Frequency (MHz)', title=None, xlim=(fmin, fmax))
     plt.plot(f4s, frabis1*1000, linewidth=1.5)
+    # draw vertical line at the maximum
+    plt.axvline(1.5123172, color='red', linestyle='--', label=r'$f_{Q1}$', linewidth=2)
+    plt.legend(fontsize=25, loc='upper left')
     plt_settings('Frequency (GHz)', 'Rabi Frequency (MHz)', title=None, xlim=(fmin_, fmax_))
     plt.plot(f4s_, frabis2*1000, linewidth=1.5)
+    plt.axvline(1.6022897, color='red', linestyle='--', label=r'$f_{Q1\_}$', linewidth=2)
+    plt.legend(fontsize=25, loc='upper left')
     
     
     #plt.savefig('Rabis_w4_Q1.png')

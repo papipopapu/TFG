@@ -4,8 +4,13 @@ import matplotlib.pyplot as plt
 import qutip as qt
 import numba as nb
 from numpy import conjugate as co
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from scipy import optimize
 from scipy.linalg import expm
+import scienceplots
+plt.style.use('science')
+
 # units in 2pi * GHz, so timescale is 1ns
 G_R = 0 * 2*np.pi
 G_L = 0 * 2*np.pi
@@ -36,8 +41,8 @@ print(frabi)
 xw4 = 1.5123172 * 2*np.pi
 xw4_ = 1.6022897 * 2*np.pi
 
-w2 = 0#2.01 * 2 * np.pi  # doesnt matter for now
-w4 = 1.5123172 * 2 * np.pi  
+w2 = 0#2.01 * 2 * np.pi  # doesnt matter for now la figura
+w4 = 1.6022897 * 2 * np.pi  
 # paper calculations
 h = 6.62607015e-34
 B = 0.675
@@ -78,6 +83,22 @@ ground = 2
 print("Ground:", ground)
 print("Eigenvec:", evecs[:, ground])
 print("Frequencies:")
+e1 = evals[1]
+for e in evals:
+    print((e-e1)/(2*np.pi))
+    
+ground = 1
+print("Ground:", ground)
+print("Eigenvec:", evecs[:, ground])
+print("Frequencies:")
+e1 = evals[ground]
+for e in evals:
+    print((e-e1)/(2*np.pi))
+    
+ground = 3
+print("Ground:", ground)
+print("Eigenvec:", evecs[:, ground])
+print("Frequencies:")
 e1 = evals[ground]
 for e in evals:
     print((e-e1)/(2*np.pi))
@@ -112,8 +133,8 @@ psi0 = psi0 / np.linalg.norm(psi0)
 """ psi0 = evecs[:, 0]
 w4 = evals[2] - evals[0] """
 psi0 = ground
-""" psi0 = e2 """
-psiex = e1
+psi0 = e2
+psiex = e3
 
 tlist = np.linspace(0, 500, 5000)
 psi0 = qt.Qobj(psi0)
@@ -162,14 +183,15 @@ dom_freq = new_freqs[np.argmax(new_spectrum)]
 print("Dominant frequency", dom_freq)
      """
     
-    
-plt.figure()
-plt.title('Floquet')
-plt.plot(tlist, 1-probs)
 
-plt.figure()
-plt.title('Floquet')
-plt.plot(tlist, ex)
+
+fig, ax = plt.subplots()
+ax.plot(tlist, 1-probs, linewidth=0.5)
+ax.set_xlabel('Time (ns)')
+ax.set_ylabel(r'$1-P_{\downarrow\uparrow}$')
+ax.set_xlim(0, 500)
+ax.set_ylim(0, 1)
+plt.savefig('floquet.png', bbox_inches='tight', dpi=1000)
 
 plt.show()
 """ # only plot floquet modes

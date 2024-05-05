@@ -5,6 +5,9 @@ from pymablock import block_diagonalize
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib.colors as mat
+import scienceplots
+from tqdm import tqdm
+plt.style.use('science')
 def floquet_bichrom(H0, Nw, V, Vbar, w, wbar, phi=0, phibar=0):
     """
     asumo cosenos
@@ -50,8 +53,25 @@ dG_L4 = 0.00 * 2*np.pi
 dG_R4 = 0.00 * 2*np.pi
 ep2 = 40.2 * 2*np.pi
 ep4 = 6.35 * 2*np.pi # * 15 
-w_z4= 6.717e+00
-dw_z4 =   6.586e+00 
+
+""" 
+[ 7.55909548e+00  6.70888679e+00  6.41393264e-03  3.04769424e-02
+ -9.84123258e-03 -1.39437841e+00 -2.27935638e-01  1.66968398e-02] """
+
+""" w_z4=7.55909548e+00   * np.exp(1j * -2.27935638e-01)
+dw_z4 =  6.70888679e+00 * np.exp(1j * 1.66968398e-02)
+t = t * np.exp(1j * 6.41393264e-03)
+Om = Om * np.exp(1j * 3.04769424e-02)
+w_z = w_z * np.exp(1j * -9.84123258e-03)
+dw_z = dw_z * np.exp(1j * -1.39437841e+00) """
+
+w_z40 = 0
+dw_z40 = 0
+
+w_z4 = w_z/5
+dw_z4 = dw_z/5
+
+
 V4 = np.array([
     [-dw_z4, 0, 0, 0, 0, 0],
     [0, dw_z4, 0, 0, 0, 0],
@@ -59,6 +79,21 @@ V4 = np.array([
     [0, 0, 0, -w_z4, 0, 0],
     [0, 0, 0, 0, -ep4, 0],
     [0, 0, 0, 0, 0, ep4]])
+
+V40 = np.array([
+    [-dw_z40, 0, 0, 0, 0, 0],
+    [0, dw_z40, 0, 0, 0, 0],
+    [0, 0, w_z40, 0, 0, 0],
+    [0, 0, 0, -w_z40, 0, 0],
+    [0, 0, 0, 0, -ep4, 0],
+    [0, 0, 0, 0, 0, ep4]])
+V4 = np.array([
+    [-dw_z4, 0, dG_R4, dG_L4, 0, 0],
+    [0, dw_z4, dG_L4, dG_R4, 0, 0],
+    [dG_R4, dG_L4, w_z4, 0, 0, 0],
+    [dG_L4, dG_R4, 0, -w_z4, 0, 0],
+    [0, 0, 0, 0, -ep4, 0],
+    [0, 0, 0, 0, 0, ep4]], dtype=np.float64)
 V2= np.array([
     [0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0],
@@ -67,28 +102,42 @@ V2= np.array([
     [0, 0, 0, 0, -ep2, 0],
     [0, 0, 0, 0, 0, ep2]])
 H_0 = np.array([
-    [-dw_z  , 0      , 0  , 0     , -co(t) , -co(t)],
-    [0      , dw_z   , 0  ,0      , t      , t],
-    [0    , 0    , w_z     , 0        , -Om    , -Om],
-    [0, 0, 0        , -w_z    , -co(Om), -co(Om)],
+    [-dw_z  , 0      , co(G_R)  , G_L      , -co(t) , -co(t)],
+    [0      , dw_z   , co(G_L)  , G_R      , t      , t],
+    [G_R    , G_L    , w_z     , 0        , -Om    , -Om],
+    [co(G_L), co(G_R), 0        , -w_z    , -co(Om), -co(Om)],
     [-t   , co(t), -co(Om), -Om    , U-e      , 0],
     [-t   , co(t), -co(Om), -Om    , 0        , U+e]])
 """ w4 = 1.5123172 * 2*np.pi
 w4_ = 1.6022897 * 2*np.pi """
 
-w4 =  1.5123172 * 2*np.pi * (1+np.e) #n2
-w2 = 1.5123172 * 2*np.pi  * np.e #n1
-w4_ =  1.5123172 * 2*np.pi * (np.e*3 + 3) / (np.e*8 + 6) #n2
-w2_ = 1.5123172 * 2*np.pi  * (np.e*5 + 3) / (np.e*8 + 6)  #n1
-
-Nw = 2 
+f0 = 1.5123172
+w4 =  f0 * 2*np.pi * 13/8#n2
+w2 = f0 * 2*np.pi  * 5/8 #n1
+w4_ =  f0 * 2*np.pi * 6/11#n2
+w2_ = f0 * 2*np.pi  * 5/11  #n1
+# 1.5123172
+Nw = 2
 N = 6
 
-
+def plt_settings(xlabel, ylabel, title=None, xlim=None, ylim=None):
+    plt.figure(figsize=(10, 6))
+    plt.xlabel(xlabel, fontsize=25)
+    plt.ylabel(ylabel, fontsize=25)
+    
+    if ylim is not None:
+        plt.ylim(ylim)
+    if xlim is not None:
+        plt.xlim(xlim)
+    plt.tick_params(axis='both', which='major', labelsize=20, width=1.2, length=6)
+    plt.tick_params(axis='both', which='minor', labelsize=20, width=1.2, length=2)
+    if title is not None:
+        plt.title(title)
+        
 def get_subspace_indices(N, Nw, m, mp):
     subspace_indices = []
-    for n1 in range(-Nw, Nw+1):
-        for n2 in range(-Nw, Nw+1):
+    for n2 in range(-Nw, Nw+1):
+        for n1 in range(-Nw, Nw+1):
             for alpha in range(N):
                 i = idx(alpha, n1, n2, N, Nw)
                 if i == m or i == mp:
@@ -96,31 +145,236 @@ def get_subspace_indices(N, Nw, m, mp):
                 else:
                     subspace_indices.append(1)
     return np.array(subspace_indices)
+Nsw =  7
 
+K = 200
+nw4max = 2.91
+w4array = np.linspace(1.3, nw4max, K)
+w4s = f0 * 2*np.pi * w4array
+w2s = w4s - f0 * 2*np.pi 
+rabis = np.zeros(K)
+rabis0 = np.zeros(K)
+diff = np.zeros(K)
+diff0 = np.zeros(K)
+m = idx(3, 0, 0, N, Nw)
+mp = idx(0, 1, -1, N, Nw)
+sis = get_subspace_indices(N, Nw, m, mp)
+i = 0
+bad_indices = []
+bad_indices0 = []
+for w2, w4 in tqdm(zip(w2s, w4s)):
+    
+    try:
+        HF = floquet_bichrom(H_0, Nw, V2, V4, w2, w4)
+        H0 = np.diag(np.diag(HF))
+        H1 = HF - H0
+        H = [H0, H1]
+        H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)   
+        res =  np.sum(H_tilde[0, 0, :Nsw]) / np.pi* 1000
+        rabis[i] = abs(res)[0, 1]
+        diff[i] = abs(res[0, 0] - res[1, 1])
+        
+    except Exception as ex:
+        if str(ex) == 'Interrupted by user':
+            raise KeyboardInterrupt
+        rabis[i] = np.nan
+        diff[i] = np.nan
+        bad_indices.append(i)
+        
+    try:     
+        HF0 = floquet_bichrom(H_0, Nw, V2, V40, w2, w4)
+        H0 = np.diag(np.diag(HF0))
+        H1 = HF0 - H0
+        H = [H0, H1]
+        H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)
+        res =  np.sum(H_tilde[0, 0, :Nsw]) / np.pi* 1000
+        rabis0[i] = abs(res)[0, 1]
+        diff0[i] = abs(res[0, 0] - res[1, 1])
+    except Exception as ex:
+        if str(ex) == 'Interrupted by user':
+            raise KeyboardInterrupt
+        rabis0[i] = np.nan
+        diff0[i] = np.nan        
+        bad_indices0.append(i)
+    
+    i += 1
+f4s = w4s / (2*np.pi)
+fig, (ax, ax2) = plt.subplots(1, 2, sharey=True, figsize=(9, 4.8))
+fig.suptitle(r'$Q1^{-P2,P4}$', fontsize=22, x=0.5, y=0.97)
+ax.plot(f4s, rabis, label=r'g-TMR')
+ax.plot(f4s, rabis0, label=r'No g-TMR', c='green')
+ax2.plot(f4s, rabis, label=r'g-TMR')
+ax2.plot(f4s, rabis0, label=r'No g-TMR', c='green')
+ax.tick_params(axis='both', which='major', labelsize=18, width=1, length=6)
+ax2.tick_params(axis='both', which='major', labelsize=18, width=1, length=6)
+
+
+for i in bad_indices:
+    ax.plot(f4s[i], 0, c='C0', marker='x')
+    ax2.plot(f4s[i], 0, c='C0', marker='x')
+for i in bad_indices0:
+    ax.plot(f4s[i], 0, 'gx')
+    ax2.plot(f4s[i], 0, 'gx')
+
+ax.set_xlim(2.2, 2.7)
+ax2.set_xlim(3.7, 4.2)
+ax.set_ylim(0, 12)
+ax2.set_ylim(0, 12)
+
+ax.spines.right.set_visible(False)
+ax2.spines.left.set_visible(False)
+ax.yaxis.tick_left()
+ax.tick_params(labelright=False)
+ax2.yaxis.tick_right()
+
+ax.set_xlabel(r'$f_4$ (GHz)', fontsize=20)
+ax.xaxis.set_label_coords(1.1, -0.07)
+ax.set_ylabel(r'Rabi Frequency (MHz)', fontsize=20)
+
+
+
+
+d = .015
+kwargs = dict(transform=ax.transAxes, color='k', clip_on=False)
+ax.plot((1-d, 1+d), (-d, +d), **kwargs)
+ax.plot((1-d, 1+d), (1-d, 1+d), **kwargs)
+
+kwargs.update(transform=ax2.transAxes)  # switch to the bottom axes
+ax2.plot((-d, +d), (1-d, 1+d), **kwargs)
+ax2.plot((-d, +d), (-d, +d), **kwargs)
+#legend in the middle
+plt.legend(fontsize=20, loc=[-0.42, 0.6])
+
+
+
+
+
+
+fig, ax = plt.subplots()
+plt.title(r'$Q1^{-P2,P4}$')
+ax.set_ylim(0, 40)
+ax.set_xlim(1.3*f0, nw4max*f0)
+ax.plot(f4s, diff, label=r'g-TMR')
+ax.plot(f4s, diff0, label=r'No g-TMR', c='green')
+for i in bad_indices:
+    ax.plot(f4s[i],0, c='C0', marker='x')
+for i in bad_indices0:
+    ax.plot(f4s[i], 0, 'gx')
+ax.set_xlabel(r'$f_4$ (GHz)')
+ax.set_ylabel(r'Bloch-Siegert Shift (MHz)')
+plt.legend(loc=[0.35, 0.7])
+plt.savefig('BSQ1-P2P4.png', bbox_inches='tight', dpi=1000)
+
+
+K = 200
+nw4min = 0.01
+w4array = np.linspace(nw4min,1-nw4min, K)
+w4s = f0 * 2*np.pi * w4array
+w2s = - w4s + f0 * 2*np.pi 
+rabis = np.zeros(K)
+rabis0 = np.zeros(K)
+diff = np.zeros(K)
+diff0 = np.zeros(K) 
+m = idx(3, 0, 0, N, Nw)
+mp = idx(0, -1, -1, N, Nw)
+sis = get_subspace_indices(N, Nw, m, mp)
+i = 0
+bad_indices = []
+bad_indices0 = []
+for w2, w4 in tqdm(zip(w2s, w4s)):
+    
+    try:
+        HF = floquet_bichrom(H_0, Nw, V2, V4, w2, w4)
+        H0 = np.diag(np.diag(HF))
+        H1 = HF - H0
+        H = [H0, H1]
+        H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)   
+        res =  np.sum(H_tilde[0, 0, :Nsw]) / np.pi* 1000
+        rabis[i] = abs(res)[0, 1]
+        diff[i] = abs(res[0, 0] - res[1, 1])
+        
+    except Exception as ex:
+        if str(ex) == 'Interrupted by user':
+            raise KeyboardInterrupt
+        rabis[i] = np.nan
+        diff[i] = np.nan
+        bad_indices.append(i)
+        
+    try:     
+        HF0 = floquet_bichrom(H_0, Nw, V2, V40, w2, w4)
+        H0 = np.diag(np.diag(HF0))
+        H1 = HF0 - H0
+        H = [H0, H1]
+        H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)
+        res =  np.sum(H_tilde[0, 0, :Nsw]) / np.pi* 1000
+        rabis0[i] = abs(res)[0, 1]
+        diff0[i] = abs(res[0, 0] - res[1, 1])
+    except Exception as ex:
+        if str(ex) == 'Interrupted by user':
+            raise KeyboardInterrupt
+        rabis0[i] = np.nan
+        diff0[i] = np.nan        
+        bad_indices0.append(i)
+        
+        
+    
+    i += 1
+f4s = w4s / (2*np.pi)
+fig, ax = plt.subplots()
+plt.title(r'$Q1^{P2,P4}$')
+ax.plot(f4s, rabis, label=r'g-TMR')
+ax.plot(f4s, rabis0, label=r'No g-TMR', c='green')
+ax.set_xlabel(r'$f_4$ (GHz)')
+ax.set_ylabel(r'Rabi Frequency (MHz)')
+ax.set_ylim(0, 20)
+ax.set_xlim(nw4min*f0, (1-nw4min)*f0)
+plt.legend()
+plt.savefig('RabisQ1P2P4.png', bbox_inches='tight', dpi=1000)
+
+
+for i in bad_indices:
+    ax.plot(f4s[i], 0, c='C0', marker='x')
+for i in bad_indices0:
+    ax.plot(f4s[i], 0, 'gx')
+
+
+fig, ax = plt.subplots()
+plt.title(r'$Q1^{P2,P4}$')
+ax.plot(f4s, diff, label=r'g-TMR')
+ax.plot(f4s, diff0, label=r'No g-TMR', c='green')
+ax.set_xlabel(r'$f_4$ (GHz)')
+ax.set_ylabel(r'Bloch-Siegert Shift (MHz)')
+ax.set_ylim(0, 40)
+ax.set_xlim(nw4min*f0, (1-nw4min)*f0)
+for i in bad_indices:
+    ax.plot(f4s[i],0, c='C0', marker='x')
+for i in bad_indices0:
+    ax.plot(f4s[i], 0, 'gx')
+    
+plt.legend()
+plt.savefig('BSQ1P2P4.png', bbox_inches='tight', dpi=1000)
+
+    
+
+
+plt.show()
+quit()
+# 0.000687
+
+Nw = 5
+Nsw = 12
+
+w4 = 2.8123 * 2*np.pi * f0
+w2 = 1.8123 * 2*np.pi * f0
 m = idx(3, 0, 0, N, Nw)
 print(m)
 mp = idx(0, 1, -1, N, Nw)
 print(mp)
 sis = get_subspace_indices(N, Nw, m, mp)
-
-
-
-
-m = idx(3, 0, 0, N, Nw)
-print(m)
-mp = idx(0, -1, -1, N, Nw)
-print(mp)
-sis_ = get_subspace_indices(N, Nw, m, mp)
-
-
-
-
-
-Nsw =  7
-
-HF = floquet_bichrom(H_0, Nw, V2, V4, w2, w4)
-print(HF.shape)
-
+print("-P2,P4:")
+HF = floquet_bichrom(H_0, Nw, V2, V40, w2, w4)
+print(HF[m, m])
+print(HF[mp, mp])
 H0 = np.diag(np.diag(HF))
 H1 = HF - H0
 H = [H0, H1]
@@ -128,19 +382,26 @@ H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)
 print(abs(np.sum(H_tilde[0, 0, :Nsw]) / np.pi))
 
 
-
-HF_ = floquet_bichrom(H_0, Nw, V2, V4, w2, w4_)
-
+w4_ = (0.5-0.2143)* 2*np.pi * f0
+w2_ = (0.5+0.2143) * 2*np.pi * f0
+m = idx(3, 0, 0, N, Nw)
+print(m)
+mp = idx(0, -1, -1, N, Nw)
+print(mp)
+sis_ = get_subspace_indices(N, Nw, m, mp)
+print("P2,P4:")
+HF_ = floquet_bichrom(H_0, Nw, V2, V40, w2_, w4_)
+print(HF_[m, m])
+print(HF_[mp, mp])
 H0_ = np.diag(np.diag(HF_))
 H1_ = HF_ - H0_
 H_ = [H0_, H1_]
 H_tilde_, *_  = block_diagonalize(H_, subspace_indices=sis_)
-print(abs(np.sum(H_tilde_[0, 0, :Nsw]) / np.pi))
+print(abs(np.sum(H_tilde_[0, 0, :Nsw])) / np.pi)
 
 
 quit()
-
-Ns = 64
+Ns = 100
 
 w_zmin = -1
 w_zmax = 1
@@ -245,3 +506,5 @@ plt.tight_layout()
 plt.show()
 
 # FUNCIONAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+ # frequency dependence-> wqould nee dto know that shit to shit with resonance
+ # but normal bi works :')

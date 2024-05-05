@@ -44,10 +44,36 @@ dG_L4 = 0.00 * 2*np.pi
 dG_R4 = 0.00 * 2*np.pi
 ep2 = 40.2 * 2*np.pi
 ep4 = 6.35 * 2*np.pi # * 15 
-dw_z4 = -0.052* 2*np.pi
-w_z4 = -0.14* 2*np.pi
-w_z4= 6.717e+00
-dw_z4 =   6.586e+00 
+dw_z4 =0
+w_z4 =0
+
+"""
+x: [ 4.36926890e+00  3.71956503e+00 -2.87245493e-06 -1.98537803e-06
+  1.29582318e-02 -7.57733233e-01 -5.57836290e-01  4.49116911e-01] f: 3.534895052032348
+  
+ -6.85228077 -7.8717792   0.20275428 -0.9356119  -0.79324548  1.15867178
+  1.09228035 -0.136454
+  
+  w_z40 = w4s[0]
+    dw_z40 = w4s[1]
+    phit = w4s[2]
+    phiOm = w4s[3]
+    phiw_z = w4s[4]
+    phidw_z = w4s[5]
+    phiw_z4 = w4s[6]
+    phidw_z4 = w4s[7]
+    
+"""
+""" w_z4= -6.85228077  
+dw_z4 =   -7.8717792 
+t = t * np.exp(1j * 0.20275428 )
+Om = Om * np.exp(1j * -0.9356119)
+w_z = w_z * np.exp(1j * -0.79324548 )
+dw_z = dw_z * np.exp(1j * 1.15867178)
+ """
+
+
+
 V4 = np.array([
     [0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0],
@@ -78,7 +104,7 @@ H_0 = np.array([
     [-t   , co(t), -co(Om), -Om    , 0        , U+e]])
 w4 = 1.5123172 * 2*np.pi
 w4_ = 1.6022897 * 2*np.pi
-Nw = 5
+Nw = 6
 N = 6
 
 
@@ -92,12 +118,26 @@ def get_subspace_indices(N, Nw, m, mp):
             else:
                 subspace_indices.append(1)
     return np.array(subspace_indices)
+Nsw = 12
+
 
 m = idx(1, 0, N, Nw)
 print(m)
 mp = idx(2, -1, N, Nw)
 print(mp)
 sis_ = get_subspace_indices(N, Nw, m, mp)
+HF_ = floquet_mono(H_0, Nw, V4, w4_, 0)
+H0_ = np.diag(np.diag(HF_))
+H1_ = HF_ - H0_
+H_ = [H0_, H1_]
+H_tilde_, *_  = block_diagonalize(H_, subspace_indices=sis_)
+print("Q1_P4:")
+print(HF_[m, m])
+print(HF_[mp, mp])
+print(abs(np.sum(H_tilde_[0, 0, :Nsw]) / np.pi))
+
+
+
 
 m = idx(3, 0, N, Nw)
 print(m)
@@ -105,20 +145,30 @@ mp = idx(0, -1, N, Nw)
 print(mp)
 sis = get_subspace_indices(N, Nw, m, mp)
 
-Nsw = 6
-
-HF_ = floquet_mono(H_0, Nw, V4, w4_, 0)
-H0_ = np.diag(np.diag(HF_))
-H1_ = HF_ - H0_
-H_ = [H0_, H1_]
-H_tilde_, *_  = block_diagonalize(H_, subspace_indices=sis_)
-print(np.sum(H_tilde_[0, 0, :Nsw]) / np.pi)
 HF = floquet_mono(H_0, Nw, V4, w4, 0)
 H0 = np.diag(np.diag(HF))
 H1 = HF - H0
 H = [H0, H1]
+print("Q1P4:") 
+print(HF[m, m])
+print(HF[mp, mp])
 H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)   
-print(np.sum(H_tilde[0, 0, :Nsw]) / np.pi)
+print(abs(np.sum(H_tilde[0, 0, :Nsw]) / np.pi))
+
+if True:
+    print("Q2P4:")
+    w2 = 2.42027878585024 * 2*np.pi
+    m = idx(3, 0, N, Nw)
+    print(m)
+    mp = idx(1, -1, N, Nw)
+    print(mp)
+    sis = get_subspace_indices(N, Nw, m, mp)
+    HF = floquet_mono(H_0, Nw, V2, w2, 0)
+    H0 = np.diag(np.diag(HF))
+    H1 = HF - H0
+    H = [H0, H1]
+    H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)   
+    print(abs(np.sum(H_tilde[0, 0, :Nsw]) / np.pi))
 
 
 quit()
