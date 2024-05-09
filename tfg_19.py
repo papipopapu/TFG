@@ -68,8 +68,8 @@ dw_z = dw_z * np.exp(1j * -1.39437841e+00) """
 w_z40 = 0
 dw_z40 = 0
 
-w_z4 =-0.1728991 * 2 * np.pi# -w_z/5
-dw_z4 =-0.085644672 * 2 * np.pi# -dw_z/5
+w_z4 = 0
+dw_z4 = 0
 
 
 V4 = np.array([
@@ -145,11 +145,11 @@ def get_subspace_indices(N, Nw, m, mp):
                 else:
                     subspace_indices.append(1)
     return np.array(subspace_indices)
-Nsw =  7
+Nsw =  12
 
-K = 200
-nw4max = 3.5#2.57#2.91, 1.3 (1.7, 2.47)
-w4array = np.linspace(1.1, nw4max, K)
+K = 400
+nw4max = 3.37
+w4array = np.linspace(1.3, nw4max, K)
 w4s = f0 * 2*np.pi * w4array
 w2s = w4s - f0 * 2*np.pi 
 rabis = np.zeros(K)
@@ -170,9 +170,9 @@ for w2, w4 in tqdm(zip(w2s, w4s)):
         H1 = HF - H0
         H = [H0, H1]
         H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)   
-        res =  np.sum(H_tilde[0, 0, :Nsw]) / np.pi* 1000
-        rabis[i] = abs(res)[0, 1]
-        diff[i] = abs(res[0, 0] - res[1, 1])
+        Hnew = np.sum(H_tilde[0, 0, :Nsw])
+        diff[i] = abs(Hnew[0, 0] - Hnew[1, 1]) /(2*np.pi) * 1000
+        rabis[i] = 2 * np.sqrt(((Hnew[0, 0] - Hnew[1, 1]) /2)**2 + abs(Hnew[0, 1])**2) /(2*np.pi) * 1000
         
     except Exception as ex:
         if str(ex) == 'Interrupted by user':
@@ -187,9 +187,11 @@ for w2, w4 in tqdm(zip(w2s, w4s)):
         H1 = HF0 - H0
         H = [H0, H1]
         H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)
-        res =  np.sum(H_tilde[0, 0, :Nsw]) / np.pi* 1000
-        rabis0[i] = abs(res)[0, 1]
-        diff0[i] = abs(res[0, 0] - res[1, 1])
+        Hnew = np.sum(H_tilde[0, 0, :Nsw])
+        diff0[i] = abs(Hnew[0, 0] - Hnew[1, 1]) /(2*np.pi) * 1000
+        rabis0[i] = 2 * np.sqrt(((Hnew[0, 0] - Hnew[1, 1]) /2)**2 + abs(Hnew[0, 1])**2) /(2*np.pi) * 1000
+
+           
     except Exception as ex:
         if str(ex) == 'Interrupted by user':
             raise KeyboardInterrupt
@@ -199,7 +201,7 @@ for w2, w4 in tqdm(zip(w2s, w4s)):
     
     i += 1
 f4s = w4s / (2*np.pi)
-""" fig, (ax, ax2) = plt.subplots(1, 2, sharey=True, figsize=(9, 4.8))
+fig, (ax, ax2) = plt.subplots(1, 2, sharey=True, figsize=(9, 4.8))
 fig.suptitle(r'$Q1^{-P2,P4}$', fontsize=22, x=0.5, y=0.97)
 ax.plot(f4s, rabis, label=r'g-TMR')
 ax.plot(f4s, rabis0, label=r'No g-TMR', c='green')
@@ -217,7 +219,7 @@ for i in bad_indices0:
     ax2.plot(f4s[i], 0, 'gx')
 
 ax.set_xlim(2.2, 2.7)
-ax2.set_xlim(3.7, 4.2)
+ax2.set_xlim(3.7, 5)#4.2)
 ax.set_ylim(0, 12)
 ax2.set_ylim(0, 12)
 
@@ -243,25 +245,17 @@ kwargs.update(transform=ax2.transAxes)  # switch to the bottom axes
 ax2.plot((-d, +d), (1-d, 1+d), **kwargs)
 ax2.plot((-d, +d), (-d, +d), **kwargs)
 #legend in the middle
-plt.legend(fontsize=20, loc=[-0.42, 0.6])
- """
+plt.legend(fontsize=20, loc=[-0.55, 0.6])
+
+plt.savefig('RabisQ1-P2P4.png', bbox_inches='tight', dpi=1000)
+
+
 
 
 fig, ax = plt.subplots()
 plt.title(r'$Q1^{-P2,P4}$')
-ax.plot(f4s, rabis, label=r'g-TMR')
-ax.plot(f4s, rabis0, label=r'No g-TMR', c='green')
-ax.set_xlabel(r'$f_4$ (GHz)')
-ax.set_ylabel(r'Rabi Frequency (MHz)')
-ax.set_ylim(0, 5)
-ax.set_xlim(1.1*f0, nw4max*f0)
-plt.legend()
-plt.savefig('0RabisQ1-P2P4.png', bbox_inches='tight', dpi=1000)
-
-fig, ax = plt.subplots()
-plt.title(r'$Q1^{-P2,P4}$')
-ax.set_ylim(0, 20)
-ax.set_xlim(1.7*f0, nw4max*f0)
+ax.set_ylim(0, 15)
+ax.set_xlim(1.3*f0, nw4max*f0)
 ax.plot(f4s, diff, label=r'g-TMR')
 ax.plot(f4s, diff0, label=r'No g-TMR', c='green')
 for i in bad_indices:
@@ -270,7 +264,7 @@ for i in bad_indices0:
     ax.plot(f4s[i], 0, 'gx')
 ax.set_xlabel(r'$f_4$ (GHz)')
 ax.set_ylabel(r'Bloch-Siegert Shift (MHz)')
-plt.legend()
+plt.legend(loc='upper right')
 plt.savefig('BSQ1-P2P4.png', bbox_inches='tight', dpi=1000)
 
 
@@ -297,9 +291,10 @@ for w2, w4 in tqdm(zip(w2s, w4s)):
         H1 = HF - H0
         H = [H0, H1]
         H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)   
-        res =  np.sum(H_tilde[0, 0, :Nsw]) / np.pi* 1000
-        rabis[i] = abs(res)[0, 1]
-        diff[i] = abs(res[0, 0] - res[1, 1])
+        Hnew = np.sum(H_tilde[0, 0, :Nsw])
+        diff[i] = abs(Hnew[0, 0] - Hnew[1, 1]) /(2*np.pi) * 1000
+        rabis[i] = 2 * np.sqrt(((Hnew[0, 0] - Hnew[1, 1]) /2)**2 + abs(Hnew[0, 1])**2) /(2*np.pi) * 1000
+        
         
     except Exception as ex:
         if str(ex) == 'Interrupted by user':
@@ -314,9 +309,10 @@ for w2, w4 in tqdm(zip(w2s, w4s)):
         H1 = HF0 - H0
         H = [H0, H1]
         H_tilde, *_  = block_diagonalize(H, subspace_indices=sis)
-        res =  np.sum(H_tilde[0, 0, :Nsw]) / np.pi* 1000
-        rabis0[i] = abs(res)[0, 1]
-        diff0[i] = abs(res[0, 0] - res[1, 1])
+        Hnew = np.sum(H_tilde[0, 0, :Nsw])
+        diff0[i] = abs(Hnew[0, 0] - Hnew[1, 1]) /(2*np.pi) * 1000
+        rabis0[i] = 2 * np.sqrt(((Hnew[0, 0] - Hnew[1, 1]) /2)**2 + abs(Hnew[0, 1])**2) /(2*np.pi) * 1000
+        
     except Exception as ex:
         if str(ex) == 'Interrupted by user':
             raise KeyboardInterrupt
@@ -337,7 +333,7 @@ ax.set_ylabel(r'Rabi Frequency (MHz)')
 ax.set_ylim(0, 20)
 ax.set_xlim(nw4min*f0, (1-nw4min)*f0)
 plt.legend()
-plt.savefig('0RabisQ1P2P4.png', bbox_inches='tight', dpi=1000)
+plt.savefig('RabisQ1P2P4.png', bbox_inches='tight', dpi=1000)
 
 
 for i in bad_indices:
@@ -352,7 +348,7 @@ ax.plot(f4s, diff, label=r'g-TMR')
 ax.plot(f4s, diff0, label=r'No g-TMR', c='green')
 ax.set_xlabel(r'$f_4$ (GHz)')
 ax.set_ylabel(r'Bloch-Siegert Shift (MHz)')
-ax.set_ylim(0, 40)
+ax.set_ylim(0, 15)
 ax.set_xlim(nw4min*f0, (1-nw4min)*f0)
 for i in bad_indices:
     ax.plot(f4s[i],0, c='C0', marker='x')
